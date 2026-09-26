@@ -767,7 +767,7 @@
               <%= @performance.revealed? ? "Completed" : "Now Singing" %>
             </span>
           </div>
-          <div class="singer-name"><%= singer&.nickname || "Cantor" %></div>
+          <div class="singer-name"><%= singer&.nickname || "Singer" %></div>
           <div class="singer-song <%= 'revealed' if @performance.revealed? %>">
             <%= @performance.song_request.title %>
           </div>
@@ -781,7 +781,7 @@
       <% else %>
         <div class="singer-empty">
           <div class="singer-empty-icon">🎵</div>
-          <div class="singer-empty-text">Aguardando próxima<br>apresentação</div>
+          <div class="singer-empty-text">Waiting for the next<br>performance</div>
         </div>
       <% end %>
     </div>
@@ -846,7 +846,7 @@
             <% end %>
           <% end %>
         <% else %>
-          <div class="queue-empty">Fila vazia</div>
+          <div class="queue-empty">Empty queue</div>
         <% end %>
       </div>
     </div>

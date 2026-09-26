@@ -6,19 +6,19 @@
 
     <% if @position %>
       <div class="pp-position-card">
-        <span class="pp-position-label">Sua posição na fila</span>
+        <span class="pp-position-label">Your position in queue</span>
         <span class="pp-position-number"><%= @position + 1 %>º</span>
       </div>
     <% end %>
 
-    <div class="pp-section-label">ORDEM DE APRESENTAÇÃO</div>
+    <div class="pp-section-label">PERFORMANCE ORDER</div>
 
     <div class="pp-card">
       <% if @queue.empty? %>
         <div class="pp-empty">
           <div class="pp-empty-icon">🎶</div>
-          <div class="pp-empty-text">Nenhum pedido na fila ainda</div>
-          <div class="pp-empty-sub">Peça uma música na aba My Songs</div>
+          <div class="pp-empty-text">No requests in queue yet</div>
+          <div class="pp-empty-sub">Request a song in the My Songs tab</div>
         </div>
       <% else %>
         <% @queue.each_with_index do |sr, i| %>
@@ -29,7 +29,7 @@
               <div class="pp-queue-name">
                 <%= sr.participant.nickname %>
                 <% if sr.participant_id == current_participant.id %>
-                  <span class="pp-you-badge">VOCÊ</span>
+                  <span class="pp-you-badge">YOU</span>
                 <% end %>
               </div>
               <div class="pp-queue-song"><%= sr.title %> — <%= sr.artist %></div>

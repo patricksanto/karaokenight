@@ -1,16 +1,16 @@
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; min-height: 100vh; background: var(--color-bg); padding: 1rem;" data-room-code="<%= @room.code %>">
   <div>
     <div class="card">
-      <h2 style="font-size: 1.3rem; margin-bottom: 1rem;">🎤 Painel do Host</h2>
+      <h2 style="font-size: 1.3rem; margin-bottom: 1rem;">🎤 Host Panel</h2>
       <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
         <div style="background: var(--color-surface-2); padding: 0.75rem 1.5rem; border-radius: 8px; font-size: 1.5rem; font-weight: 700; letter-spacing: 0.2rem;"><%= @room.code %></div>
-        <%= link_to "Tela do Projetor", room_projector_path(@room.code), target: "_blank", class: "btn btn-secondary" %>
+        <%= link_to "Projector Screen", room_projector_path(@room.code), target: "_blank", class: "btn btn-secondary" %>
       </div>
-      <p class="text-muted" style="font-size: 0.85rem;">Sala: <%= @room.name || "Sem nome" %> | Status: <%= @room.status %></p>
+      <p class="text-muted" style="font-size: 0.85rem;">Room: <%= @room.name || "Unnamed" %> | Status: <%= @room.status %></p>
     </div>
 
     <div class="card">
-      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Apresentação atual</h3>
+      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Current Performance</h3>
       <% if @performance %>
         <div style="background: var(--color-surface-2); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
           <p style="font-size: 1.2rem; font-weight: 600;"><%= @performance.singers.first&.emoji %> <%= @performance.singers.first&.nickname %></p>
@@ -20,24 +20,24 @@
         </div>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
           <% if @performance.performing? %>
-            <%= button_to "Encerrar música", close_room_performance_path(@room, @performance), method: :post, class: "btn btn-primary" %>
-            <%= button_to "Abortar", abort_room_performance_path(@room, @performance), method: :post, class: "btn btn-danger", data: { turbo_confirm: "Abortar esta apresentação?" } %>
+            <%= button_to "End song", close_room_performance_path(@room, @performance), method: :post, class: "btn btn-primary" %>
+            <%= button_to "Abort", abort_room_performance_path(@room, @performance), method: :post, class: "btn btn-danger", data: { turbo_confirm: "Abort this performance?" } %>
           <% end %>
         </div>
       <% else %>
-        <p class="text-muted">Nenhuma apresentação ativa</p>
+        <p class="text-muted">No active performance</p>
         <% if @queue.any? %>
           <div style="margin-top: 1rem;">
-            <p style="font-weight: 600; margin-bottom: 0.5rem;">Próximo: <%= @queue.first.participant.emoji %> <%= @queue.first.participant.nickname %></p>
+            <p style="font-weight: 600; margin-bottom: 0.5rem;">Next: <%= @queue.first.participant.emoji %> <%= @queue.first.participant.nickname %></p>
             <p class="text-muted" style="margin-bottom: 1rem;"><%= @queue.first.title %> — <%= @queue.first.artist %></p>
-            <%= button_to "Iniciar apresentação", room_start_performance_path(@room, song_request_id: @queue.first.id), method: :post, class: "btn btn-primary btn-block" %>
+            <%= button_to "Start performance", room_start_performance_path(@room, song_request_id: @queue.first.id), method: :post, class: "btn btn-primary btn-block" %>
           </div>
         <% end %>
       <% end %>
     </div>
 
     <div class="card">
-      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Fila (<%= @queue.size %>)</h3>
+      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Queue (<%= @queue.size %>)</h3>
       <% @queue.each_with_index do |sr, i| %>
         <div style="display: flex; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--color-surface-2);">
           <span style="width: 24px; color: var(--color-text-muted);"><%= i + 1 %>.</span>
@@ -49,14 +49,14 @@
         </div>
       <% end %>
       <% if @queue.empty? %>
-        <p class="text-muted text-center">Fila vazia</p>
+        <p class="text-muted text-center">Empty queue</p>
       <% end %>
     </div>
   </div>
 
   <div>
     <div class="card">
-      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Participantes (<%= @participants.size %>)</h3>
+      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Participants (<%= @participants.size %>)</h3>
       <% @participants.each do |p| %>
         <div style="display: flex; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--color-surface-2);">
           <span style="font-size: 1.3rem; margin-right: 0.5rem;"><%= p.emoji %></span>
@@ -71,7 +71,7 @@
     </div>
 
     <div class="card">
-      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Pedidos pendentes (<%= @pending_requests.size %>)</h3>
+      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Pending requests (<%= @pending_requests.size %>)</h3>
       <% @pending_requests.each do |sr| %>
         <div style="display: flex; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--color-surface-2);">
           <span style="font-size: 1.2rem; margin-right: 0.5rem;"><%= sr.participant.emoji %></span>
@@ -79,11 +79,11 @@
             <div style="font-weight: 600;"><%= sr.title %></div>
             <div class="text-muted" style="font-size: 0.85rem;"><%= sr.artist %> — <%= sr.participant.nickname %></div>
           </div>
-          <button onclick="navigator.clipboard.writeText('<%= sr.title %> — <%= sr.artist %>')" style="background: var(--color-surface-2); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer;">📋 Copiar</button>
+          <button onclick="navigator.clipboard.writeText('<%= sr.title %> — <%= sr.artist %>')" style="background: var(--color-surface-2); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer;">📋 Copy</button>
         </div>
       <% end %>
       <% if @pending_requests.empty? %>
-        <p class="text-muted text-center">Nenhum pedido pendente</p>
+        <p class="text-muted text-center">No pending requests</p>
       <% end %>
     </div>
   </div>

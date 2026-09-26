@@ -1,27 +1,27 @@
 <div class="container text-center mt-3">
   <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎤</h1>
   <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Karaoke Party</h1>
-  <p class="text-muted mb-3">A noite é sua! Cante, vote, divirta-se.</p>
+  <p class="text-muted mb-3">The night is yours! Sing, vote, have fun.</p>
 
   <div class="card">
     <form action="/rooms" method="post" data-turbo="false" class="needs-csrf">
       <div class="mb-2">
-        <label class="text-muted">Nome da festa (opcional)</label>
-        <input type="text" name="room[name]" placeholder="Ex: Karaokê da galera">
+        <label class="text-muted">Party name (optional)</label>
+        <input type="text" name="room[name]" placeholder="e.g. Karaoke Night">
       </div>
-      <input type="submit" value="Criar Sala" class="btn btn-primary btn-block">
+      <input type="submit" value="Create Room" class="btn btn-primary btn-block">
     </form>
   </div>
 
-  <div style="margin: 1.5rem 0; color: var(--color-text-muted);">ou</div>
+  <div style="margin: 1.5rem 0; color: var(--color-text-muted);">or</div>
 
   <div class="card">
     <form action="/rooms/enter" method="post" data-turbo="false" class="needs-csrf">
       <div class="mb-2">
-        <label class="text-muted">Código da sala</label>
-        <input type="text" name="code" placeholder="Ex: ABC123" maxlength="6" style="text-transform: uppercase; text-align: center; font-size: 1.5rem; letter-spacing: 0.3rem;">
+        <label class="text-muted">Room code</label>
+        <input type="text" name="code" placeholder="e.g. ABC123" maxlength="6" style="text-transform: uppercase; text-align: center; font-size: 1.5rem; letter-spacing: 0.3rem;">
       </div>
-      <input type="submit" value="Entrar" class="btn btn-secondary btn-block">
+      <input type="submit" value="Join" class="btn btn-secondary btn-block">
     </form>
   </div>
 </div>

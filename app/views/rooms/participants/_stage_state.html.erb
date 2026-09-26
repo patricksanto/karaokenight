@@ -39,7 +39,7 @@
             <span class="sg-avatar-emoji"><%= singer&.emoji || "🎤" %></span>
           </div>
           <div class="sg-card-info">
-            <div class="sg-singer-name"><%= singer&.nickname || "Cantor" %> <span class="sg-singer-role">• Singer</span></div>
+            <div class="sg-singer-name"><%= singer&.nickname || "Singer" %> <span class="sg-singer-role">• Singer</span></div>
             <div class="sg-song-title"><%= performance.song_request.title %></div>
             <div class="sg-song-artist"><%= performance.song_request.artist %></div>
           </div>
@@ -94,8 +94,8 @@
       <div class="sg-section">
         <div class="sg-singing-card">
           <div style="font-size:3rem">🌟</div>
-          <div class="sg-singing-title">Sua vez de brilhar!</div>
-          <div class="sg-singing-sub">Canta, o público está votando</div>
+          <div class="sg-singing-title">Time to shine!</div>
+          <div class="sg-singing-sub">Sing, the crowd is voting</div>
         </div>
       </div>
 
@@ -104,7 +104,7 @@
       <div class="sg-section">
         <div class="sg-voted-card">
           <span>✅</span>
-          <span>Voto enviado! Aguarda o resultado...</span>
+          <span>Vote sent! Waiting for results...</span>
         </div>
       </div>
 
@@ -229,7 +229,7 @@
         <div class="sg-rp-avatar"><%= singer&.emoji || "🎤" %></div>
         <div class="sg-rp-info">
           <div class="sg-rp-badge">PERFORMER</div>
-          <div class="sg-rp-name"><%= singer&.nickname || "Cantor" %></div>
+          <div class="sg-rp-name"><%= singer&.nickname || "Singer" %></div>
           <div class="sg-rp-song"><%= performance.song_request.title %> · <%= performance.song_request.artist %></div>
         </div>
       </div>
@@ -282,8 +282,8 @@
     <div class="sg-section">
       <div class="sg-idle-card">
         <div class="sg-idle-icon">🎵</div>
-        <div class="sg-idle-title">Aguardando próxima música...</div>
-        <div class="sg-idle-sub">Peça uma música ou aguarde sua vez!</div>
+        <div class="sg-idle-title">Waiting for the next song...</div>
+        <div class="sg-idle-sub">Request a song or wait for your turn!</div>
       </div>
     </div>
 
