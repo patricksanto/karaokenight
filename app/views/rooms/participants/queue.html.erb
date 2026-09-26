@@ -1,0 +1,175 @@
+<div class="ppage" data-room-code="<%= current_room.code %>">
+
+  <%= render "rooms/participants/page_header", title: "Queue", icon: :queue %>
+
+  <main class="ppage-main">
+
+    <% if @position %>
+      <div class="pp-position-card">
+        <span class="pp-position-label">Sua posição na fila</span>
+        <span class="pp-position-number"><%= @position + 1 %>º</span>
+      </div>
+    <% end %>
+
+    <div class="pp-section-label">ORDEM DE APRESENTAÇÃO</div>
+
+    <div class="pp-card">
+      <% if @queue.empty? %>
+        <div class="pp-empty">
+          <div class="pp-empty-icon">🎶</div>
+          <div class="pp-empty-text">Nenhum pedido na fila ainda</div>
+          <div class="pp-empty-sub">Peça uma música na aba My Songs</div>
+        </div>
+      <% else %>
+        <% @queue.each_with_index do |sr, i| %>
+          <div class="pp-queue-row <%= 'pp-queue-row--mine' if sr.participant_id == current_participant.id %>">
+            <span class="pp-queue-pos"><%= i + 1 %></span>
+            <span class="pp-queue-emoji"><%= sr.participant.emoji %></span>
+            <div class="pp-queue-info">
+              <div class="pp-queue-name">
+                <%= sr.participant.nickname %>
+                <% if sr.participant_id == current_participant.id %>
+                  <span class="pp-you-badge">VOCÊ</span>
+                <% end %>
+              </div>
+              <div class="pp-queue-song"><%= sr.title %> — <%= sr.artist %></div>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+
+  </main>
+
+  <%= render "rooms/participants/bottom_nav", active: "queue" %>
+
+</div>
+
+<style>
+  body { background: #15111E; }
+
+  .ppage {
+    min-height: 100dvh;
+    background: #15111E;
+    font-family: 'Inter', -apple-system, sans-serif;
+  }
+
+  .ppage-main {
+    padding-top: 80px;
+    padding-bottom: 100px;
+    padding-left: 16px;
+    padding-right: 16px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .pp-position-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #1E1927;
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 6px -4px rgba(0,0,0,.1), 0 10px 15px -3px rgba(0,0,0,.1);
+  }
+  .pp-position-label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    text-transform: uppercase;
+    color: #C4C9B2;
+  }
+  .pp-position-number {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    letter-spacing: -0.025em;
+    color: #C8F164;
+  }
+
+  .pp-section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #C4C9B2;
+    margin-bottom: 8px;
+  }
+
+  .pp-card {
+    background: #1E1927;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -4px rgba(0,0,0,.1), 0 10px 15px -3px rgba(0,0,0,.1);
+  }
+
+  .pp-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  .pp-empty-icon { font-size: 40px; opacity: 0.5; }
+  .pp-empty-text { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 16px; color: #E8DFF2; }
+  .pp-empty-sub { font-size: 13px; color: #C4C9B2; }
+
+  .pp-queue-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.1s;
+  }
+  .pp-queue-row:last-child { border-bottom: none; }
+  .pp-queue-row--mine {
+    background: rgba(200, 241, 100, 0.06);
+    border-left: 3px solid #C8F164;
+    padding-left: 13px;
+  }
+
+  .pp-queue-pos {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: #C4C9B2;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .pp-queue-emoji {
+    font-size: 24px;
+    flex-shrink: 0;
+    width: 32px;
+    text-align: center;
+  }
+  .pp-queue-info { flex: 1; min-width: 0; }
+  .pp-queue-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: #E8DFF2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pp-queue-song {
+    font-size: 13px;
+    color: #C4C9B2;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pp-you-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #C8F164;
+    background: rgba(200,241,100,0.12);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+</style>

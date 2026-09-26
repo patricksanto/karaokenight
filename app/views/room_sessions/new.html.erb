@@ -1,0 +1,493 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap');
+
+  .join-page {
+    min-height: 100dvh;
+    background: #15111E;
+    font-family: 'Inter', -apple-system, sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Ambient glow blobs */
+  .join-page .glow-blob {
+    position: fixed;
+    border-radius: 9999px;
+    pointer-events: none;
+    z-index: 0;
+    filter: blur(32px);
+  }
+  .join-page .glow-blob-1 {
+    width: 256px; height: 256px;
+    background: #C8F164;
+    top: -64px; left: -64px;
+    opacity: 0.20;
+  }
+  .join-page .glow-blob-2 {
+    width: 288px; height: 288px;
+    background: #5827A6;
+    top: 238px; right: -40px;
+    opacity: 0.30;
+  }
+  .join-page .glow-blob-3 {
+    width: 320px; height: 320px;
+    background: #FFAFD6;
+    top: 346px; left: 50%;
+    transform: translateX(-50%);
+    opacity: 0.20;
+  }
+
+  .join-container {
+    position: relative;
+    z-index: 1;
+    max-width: 390px;
+    margin: 0 auto;
+    padding: 0 16px 80px;
+  }
+
+  /* ── Header ── */
+  .join-header {
+    padding: 12px 0 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .room-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #2C2836;
+    border-radius: 9999px;
+    padding: 6px 16px;
+    box-shadow: 0 2px 4px -2px rgba(0,0,0,0.1), 0 4px 6px -1px rgba(0,0,0,0.1);
+  }
+  .room-pill-dot {
+    width: 10px; height: 10px;
+    background: #C8F164;
+    border-radius: 9999px;
+    flex-shrink: 0;
+  }
+  .room-pill-code {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #E8DFF2;
+  }
+  .room-pill-sep {
+    width: 4px; height: 4px;
+    background: #444937;
+    border-radius: 9999px;
+    flex-shrink: 0;
+  }
+  .room-pill-live {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.04em;
+    color: #C8F164;
+  }
+
+  .join-heading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    height: 38px;
+  }
+  .join-heading-plain {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    line-height: 38px;
+    letter-spacing: -0.025em;
+    color: #FFFFFF;
+  }
+  .join-heading-accent {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    line-height: 38px;
+    letter-spacing: -0.025em;
+    color: #C8F164;
+    filter: drop-shadow(0 0 12px rgba(200, 241, 100, 0.45));
+  }
+
+  .join-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 24px;
+    color: #C4C9B2;
+    text-align: center;
+  }
+
+  /* ── Form sections ── */
+  .join-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .section-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+  }
+  .section-label {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 20px;
+    letter-spacing: 0.02em;
+    color: #E8DFF2;
+  }
+  .section-counter {
+    font-family: 'Liberation Mono', 'Courier New', monospace;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.04em;
+    color: #C4C9B2;
+  }
+  .section-selected {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.04em;
+    color: #C8F164;
+  }
+
+  .stage-name-input {
+    width: 100%;
+    height: 56px;
+    background: #2C2836;
+    border: none;
+    border-radius: 12px;
+    padding: 17.5px 16px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 18px;
+    letter-spacing: -0.005em;
+    color: #E8DFF2;
+    outline: none;
+    transition: box-shadow 0.15s;
+    -webkit-appearance: none;
+  }
+  .stage-name-input::placeholder {
+    color: #8E937E;
+  }
+  .stage-name-input:focus {
+    box-shadow: 0 0 0 2px #C8F164;
+  }
+
+  /* ── Emoji grid ── */
+  .emoji-grid {
+    background: #100C19;
+    border-radius: 12px;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 64px 64px;
+    gap: 8px;
+    box-shadow: inset 0px 2px 4px 0px rgba(0,0,0,0.05);
+  }
+
+  .emoji-btn {
+    position: relative;
+    height: 64px;
+    background: #373241;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    line-height: 30px;
+    transition: background 0.15s, box-shadow 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .emoji-btn:active {
+    transform: scale(0.95);
+  }
+  .emoji-btn.selected {
+    background: #373241;
+    box-shadow: 0px 1px 2px 0px rgba(0,0,0,0.05);
+  }
+  .emoji-btn .selected-check {
+    display: none;
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 14px; height: 14px;
+    background: #C8F164;
+    border-radius: 9999px;
+    align-items: center;
+    justify-content: center;
+  }
+  .emoji-btn .selected-check svg {
+    width: 6.5px; height: 6.73px;
+  }
+  .emoji-btn.selected .selected-check {
+    display: flex;
+  }
+
+  /* ── Vibe indicator ── */
+  .vibe-card {
+    background: #1E1927;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0px 1px 2px 0px rgba(0,0,0,0.05);
+    margin-bottom: 24px;
+  }
+  .vibe-avatars {
+    display: flex;
+    gap: -8px;
+  }
+  .vibe-avatar {
+    width: 32px; height: 32px;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    line-height: 32px;
+    margin-left: -8px;
+    flex-shrink: 0;
+  }
+  .vibe-avatar:first-child {
+    margin-left: 0;
+  }
+  .vibe-avatar-1 { background: #5827A6; color: #D4BBFF; }
+  .vibe-avatar-2 { background: #2C2836; color: #C8F164; }
+  .vibe-avatar-3 { background: #373241; color: #FFD8E8; }
+
+  .vibe-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .vibe-count {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.04em;
+    color: #E8DFF2;
+  }
+  .vibe-now {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0.01em;
+    color: #C4C9B2;
+  }
+
+  /* ── CTA button ── */
+  .enter-btn {
+    width: 100%;
+    height: 56px;
+    background: #C8F164;
+    border: none;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 24px;
+    letter-spacing: 0.01em;
+    color: #151F00;
+    cursor: pointer;
+    position: relative;
+    box-shadow: 0px 4px 6px -4px rgba(200, 241, 100, 0.2), 0px 10px 15px -3px rgba(200, 241, 100, 0.2);
+    transition: transform 0.1s, box-shadow 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    margin-bottom: 12px;
+  }
+  .enter-btn:active {
+    transform: scale(0.97);
+  }
+  .enter-btn svg {
+    width: 14.75px; height: 14.75px;
+    fill: #151F00;
+  }
+
+  .footnote {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #C4C9B2;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0.01em;
+    text-align: center;
+  }
+  .footnote-icon {
+    color: #8E937E;
+    font-size: 13px;
+  }
+</style>
+
+<div class="join-page">
+  <!-- Ambient glow blobs -->
+  <div class="glow-blob glow-blob-1"></div>
+  <div class="glow-blob glow-blob-2"></div>
+  <div class="glow-blob glow-blob-3"></div>
+
+  <div class="join-container">
+    <!-- Header -->
+    <div class="join-header">
+      <div class="room-pill">
+        <div class="room-pill-dot"></div>
+        <span class="room-pill-code">ROOM <%= current_room.code %></span>
+        <div class="room-pill-sep"></div>
+        <span class="room-pill-live">Live</span>
+      </div>
+
+      <div>
+        <div class="join-heading">
+          <span class="join-heading-plain">Join the</span>
+          <span class="join-heading-accent">Party</span>
+        </div>
+        <p class="join-subtitle" style="margin-top: 4px;">
+          Pick a nickname and an emoji to start<br>requesting songs.
+        </p>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <form action="/rooms/<%= current_room.code %>/session" method="post" data-turbo="false" id="join-form">
+
+      <!-- Stage Name -->
+      <div class="join-section">
+        <div class="section-label-row">
+          <span class="section-label">Your Stage Name</span>
+          <span class="section-counter" id="name-counter">0 / 24</span>
+        </div>
+        <input
+          type="text"
+          name="nickname"
+          class="stage-name-input"
+          placeholder="e.g. DiscoDave or Sarah"
+          maxlength="24"
+          autofocus
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="words"
+          spellcheck="false"
+          oninput="document.getElementById('name-counter').textContent = this.value.length + ' / 24'"
+        >
+      </div>
+
+      <!-- Party Persona (emoji) -->
+      <div class="join-section">
+        <div class="section-label-row">
+          <span class="section-label">Party Persona</span>
+          <span class="section-selected" id="emoji-label">Selected: 🎤 Lead Singer</span>
+        </div>
+
+        <div class="emoji-grid" id="emoji-grid">
+          <% emojis = [
+            { icon: "🎤", label: "Lead Singer" },
+            { icon: "🎸", label: "Guitar Hero" },
+            { icon: "🪩", label: "Disco Star" },
+            { icon: "👑", label: "Royalty" },
+            { icon: "⚡", label: "Electric" },
+            { icon: "🐱", label: "Cool Cat" },
+            { icon: "🦄", label: "Unicorn" },
+            { icon: "🌟", label: "Star" }
+          ] %>
+          <% emojis.each_with_index do |e, i| %>
+            <button
+              type="button"
+              class="emoji-btn <%= i == 0 ? 'selected' : '' %>"
+              data-emoji="<%= e[:icon] %>"
+              data-label="<%= e[:label] %>"
+              onclick="selectEmoji(this)"
+              aria-label="<%= e[:label] %>"
+            >
+              <%= e[:icon] %>
+              <span class="selected-check" aria-hidden="true">
+                <svg viewBox="0 0 6.5 6.73" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 3.5L2.5 5L5.5 1.5" stroke="#151F00" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+            </button>
+          <% end %>
+        </div>
+        <input type="hidden" name="emoji" id="emoji-input" value="🎤">
+      </div>
+
+      <!-- Live Lounge Vibe indicator -->
+      <% active_count = current_room.participants.active.count %>
+      <% active_performance = current_room.active_performance %>
+      <div class="vibe-card">
+        <%
+          avatars = current_room.participants.active.order(created_at: :desc).limit(3)
+        %>
+        <div class="vibe-avatars">
+          <% avatar_colors = ['vibe-avatar-1', 'vibe-avatar-2', 'vibe-avatar-3'] %>
+          <% if avatars.any? %>
+            <% avatars.each_with_index do |p, i| %>
+              <div class="vibe-avatar <%= avatar_colors[i % 3] %>"><%= p.emoji %></div>
+            <% end %>
+          <% else %>
+            <div class="vibe-avatar vibe-avatar-1">🎤</div>
+            <div class="vibe-avatar vibe-avatar-2">🎵</div>
+            <div class="vibe-avatar vibe-avatar-3">🎶</div>
+          <% end %>
+        </div>
+        <div class="vibe-info">
+          <span class="vibe-count"><%= active_count %> singer<%= active_count == 1 ? '' : 's' %> in room</span>
+          <% if active_performance %>
+            <span class="vibe-now">Now singing: <%= active_performance.song_request.title %></span>
+          <% else %>
+            <span class="vibe-now">No song playing yet — be first!</span>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <button type="submit" class="enter-btn">
+        Enter Stage
+        <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M8.5 3L13 7.5M13 7.5L8.5 12M13 7.5H2" stroke="#151F00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="footnote">
+        <span class="footnote-icon">🔒</span>
+        <span>No password required • Jump straight into the queue</span>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function selectEmoji(btn) {
+    document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const emoji = btn.dataset.emoji;
+    const label = btn.dataset.label;
+    document.getElementById('emoji-input').value = emoji;
+    document.getElementById('emoji-label').textContent = 'Selected: ' + emoji + ' ' + label;
+  }
+</script>

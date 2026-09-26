@@ -1,0 +1,112 @@
+<nav class="bnav">
+  <div class="bnav-inner">
+    <%= link_to room_stage_path(current_room), class: "bnav-link #{active == 'stage' ? 'bnav-link--active' : ''}" do %>
+      <span class="bnav-icon">
+        <svg width="14" height="19" viewBox="0 0 14 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="0.5" width="8" height="11" rx="4" fill="currentColor"/>
+          <path d="M1 9.5C1 12.8137 3.68629 15.5 7 15.5C10.3137 15.5 13 12.8137 13 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="7" y1="15.5" x2="7" y2="18.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="4.5" y1="18.5" x2="9.5" y2="18.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="bnav-label">Stage</span>
+    <% end %>
+
+    <%= link_to room_queue_path(current_room), class: "bnav-link #{active == 'queue' ? 'bnav-link--active' : ''}" do %>
+      <span class="bnav-icon">
+        <svg width="19" height="14" viewBox="0 0 19 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="1" y1="1" x2="18" y2="1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="1" y1="7" x2="14" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="1" y1="13" x2="10" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="bnav-label">Queue</span>
+    <% end %>
+
+    <%= link_to room_my_songs_path(current_room), class: "bnav-link #{active == 'my_songs' ? 'bnav-link--active' : ''}" do %>
+      <span class="bnav-icon">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 13V4.5L14 3V11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="4" cy="13" r="2" fill="currentColor"/>
+          <circle cx="12" cy="11.5" r="2" fill="currentColor"/>
+        </svg>
+      </span>
+      <span class="bnav-label">My Songs</span>
+    <% end %>
+  </div>
+</nav>
+
+<style>
+  .bnav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(16, 12, 25, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0px -2px 16px 0px rgba(0, 0, 0, 0.5);
+  }
+
+  .bnav-inner {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    height: 80px;
+    padding: 0 16px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .bnav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 7px 18px;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #C4C9B2;
+    transition: color 0.15s, background 0.15s;
+    min-width: 72px;
+  }
+
+  .bnav-link:hover {
+    color: #E8DFF2;
+    background: rgba(44, 40, 54, 0.5);
+  }
+
+  .bnav-link--active {
+    color: #C8F164;
+    background: #2C2836;
+  }
+
+  .bnav-link--active:hover {
+    color: #C8F164;
+    background: #2C2836;
+  }
+
+  .bnav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  .bnav-icon svg {
+    display: block;
+  }
+
+  .bnav-label {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.025em;
+    white-space: nowrap;
+  }
+</style>

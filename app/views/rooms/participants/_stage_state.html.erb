@@ -1,0 +1,575 @@
+<%# Partial central da Stage — renderizado inline e via ActionCable broadcast %>
+<%# Recebe: performance, is_singer, is_next %>
+
+<% already_voted = performance&.performing? && !is_singer &&
+     performance.votes.exists?(participant: current_participant) %>
+
+<div class="stage-content-wrap">
+
+  <%# ── GLOW BLOBS ── %>
+  <div class="sg-glow sg-glow-1"></div>
+  <div class="sg-glow sg-glow-2"></div>
+
+  <% if performance&.performing? || performance&.closing? %>
+
+    <%# ─── LIVE TICKER ─── %>
+    <div class="sg-section">
+      <div class="sg-ticker">
+        <div class="sg-ticker-left">
+          <div class="sg-live-dot-wrap"><div class="sg-dot-outer"></div><div class="sg-dot-inner"></div></div>
+          <span class="sg-ticker-label">Live on Stage</span>
+        </div>
+        <div class="sg-mic-pill">🎙️ Mic 01</div>
+      </div>
+    </div>
+
+    <%# ─── PERFORMER CARD ─── %>
+    <div class="sg-section">
+      <div class="sg-performer-card">
+        <% singer = performance.singers.first %>
+        <div class="sg-card-header">
+          <div class="sg-card-left">
+            <div class="sg-live-dot-wrap sm"><div class="sg-dot-outer"></div><div class="sg-dot-inner"></div></div>
+            <span class="sg-card-live">Live on Stage</span>
+          </div>
+          <div class="sg-audio-pill">🎙 Audio active</div>
+        </div>
+        <div class="sg-card-body">
+          <div class="sg-avatar-box">
+            <span class="sg-avatar-emoji"><%= singer&.emoji || "🎤" %></span>
+          </div>
+          <div class="sg-card-info">
+            <div class="sg-singer-name"><%= singer&.nickname || "Cantor" %> <span class="sg-singer-role">• Singer</span></div>
+            <div class="sg-song-title"><%= performance.song_request.title %></div>
+            <div class="sg-song-artist"><%= performance.song_request.artist %></div>
+          </div>
+        </div>
+        <div class="sg-soundwave">
+          <% 7.times do |i| %><div class="sg-bar" style="animation-delay:<%= i*0.07 %>s"></div><% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# ─── REACTIONS BAR (sempre visível, independente de votar) ─── %>
+    <div class="sg-section">
+      <div class="sg-reactions-bar">
+        <div class="sg-reactions-header">
+          <div class="sg-reactions-left">
+            <span class="sg-section-label">REACTIONS</span>
+          </div>
+          <span class="sg-reactions-total" id="sg-reactions-total">
+            <%= performance.reactions.count %> sent
+          </span>
+        </div>
+        <div class="sg-reactions-grid" id="sg-reactions-grid">
+          <% [["🔥","fire"],["👏","clap"],["👑","crown"],["💖","heart"],["🪩","disco"]].each do |emoji, kind| %>
+            <button
+              type="button"
+              class="sg-reaction-btn"
+              data-kind="<%= kind %>"
+              onclick="sendReaction('<%= kind %>', this)"
+              aria-label="<%= emoji %> reaction"
+            >
+              <span class="sg-reaction-emoji"><%= emoji %></span>
+              <span class="sg-reaction-count" id="sg-rc-<%= kind %>">
+                <%= performance.reactions.where(kind: kind).count %>
+              </span>
+            </button>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <% if performance.closing? %>
+      <%# ─── CLOSING STATE ─── %>
+      <div class="sg-section">
+        <div class="sg-closing-card">
+          <span>⏱️</span>
+          <span class="sg-closing-text">Voting closing soon...</span>
+        </div>
+      </div>
+
+    <% elsif is_singer %>
+      <%# ─── YOU'RE SINGING ─── %>
+      <div class="sg-section">
+        <div class="sg-singing-card">
+          <div style="font-size:3rem">🌟</div>
+          <div class="sg-singing-title">Sua vez de brilhar!</div>
+          <div class="sg-singing-sub">Canta, o público está votando</div>
+        </div>
+      </div>
+
+    <% elsif already_voted %>
+      <%# ─── JÁ VOTOU ─── %>
+      <div class="sg-section">
+        <div class="sg-voted-card">
+          <span>✅</span>
+          <span>Voto enviado! Aguarda o resultado...</span>
+        </div>
+      </div>
+
+    <% else %>
+      <%# ─── VOTE FORM (Figma: Rate Performance) ─── %>
+      <div class="sg-section">
+        <div class="sg-vote-header">
+          <div class="sg-vote-title">Your rating?</div>
+          <div class="sg-vote-sub">Tap a score to submit your vote</div>
+        </div>
+      </div>
+
+      <div class="sg-section">
+        <%= form_with url: room_votes_path(room), method: :post, data: { turbo: false }, html: { id: "vote-form" } do |f| %>
+          <input type="hidden" name="performance_id" value="<%= performance.id %>">
+
+          <%# Score keypad — 4 rows like Figma %>
+          <div class="sg-keypad">
+            <div class="sg-keypad-row">
+              <% [0,1,2,3].each do |s| %>
+                <label class="sg-key-label">
+                  <input type="radio" name="vote[score]" value="<%= s %>" style="display:none" required>
+                  <span class="sg-key" onclick="pickScore(this, <%= s %>)"><%= s %></span>
+                </label>
+              <% end %>
+            </div>
+            <div class="sg-keypad-row">
+              <% [4,5,6,7].each do |s| %>
+                <label class="sg-key-label">
+                  <input type="radio" name="vote[score]" value="<%= s %>" style="display:none">
+                  <span class="sg-key" onclick="pickScore(this, <%= s %>)"><%= s %></span>
+                </label>
+              <% end %>
+            </div>
+            <div class="sg-keypad-row">
+              <% [8,9].each do |s| %>
+                <label class="sg-key-label" style="flex:1">
+                  <input type="radio" name="vote[score]" value="<%= s %>" style="display:none">
+                  <span class="sg-key" onclick="pickScore(this, <%= s %>)"><%= s %></span>
+                </label>
+              <% end %>
+              <label class="sg-key-label" style="flex:1">
+                <input type="radio" name="vote[score]" value="10" style="display:none">
+                <span class="sg-key sg-key-10" onclick="pickScore(this, 10)">10 ⭐</span>
+              </label>
+            </div>
+          </div>
+
+          <%# Vibe descriptor %>
+          <div class="sg-vibe-row" id="sg-vibe">
+            <span class="sg-vibe-icon">⭐</span>
+            <span class="sg-vibe-text" id="sg-vibe-text">Tap a score above</span>
+            <span class="sg-vibe-tally">Instant tally</span>
+          </div>
+
+          <%# Quick shoutouts %>
+          <div class="sg-section-label">QUICK SHOUTOUTS</div>
+          <div class="sg-pills-scroll">
+            <button type="button" class="sg-pill" onclick="setMsg('Encore! 🔥')">Encore! 🔥</button>
+            <button type="button" class="sg-pill" onclick="setMsg('You owned the stage! ✨')">You owned the stage! ✨</button>
+            <button type="button" class="sg-pill" onclick="setMsg('🎤 Pitch Perfect')">🎤 Pitch Perfect</button>
+            <button type="button" class="sg-pill" onclick="setMsg('Incredible voice! 👏')">Incredible voice! 👏</button>
+          </div>
+
+          <%# Cheer message %>
+          <div class="sg-cheer-wrap">
+            <div class="sg-cheer-header">
+              <span class="sg-section-label">CHEER MESSAGE</span>
+              <span class="sg-cheer-count" id="cheer-count">0/140</span>
+            </div>
+            <div class="sg-cheer-input-row">
+              <span class="sg-cheer-icon">💬</span>
+              <textarea
+                name="vote[message]"
+                id="cheer-msg"
+                class="sg-cheer-input"
+                placeholder="Add a cheer or reaction (optional)"
+                maxlength="140"
+                rows="2"
+                oninput="document.getElementById('cheer-count').textContent=this.value.length+'/140'"
+              ></textarea>
+            </div>
+          </div>
+
+          <%# Social proof %>
+          <div class="sg-social-proof">
+            <div class="sg-sp-avatars">
+              <% room.participants.active.where.not(id: performance.performance_singers.select(:participant_id)).limit(3).each_with_index do |p, i| %>
+                <div class="sg-sp-av" style="background:<%= ['#5827A6','#373241','#FFD8E8'][i]%>; z-index:<%= 3-i%>"><%= p.emoji %></div>
+              <% end %>
+              <div class="sg-sp-av sg-sp-more">+<%= [0, room.participants.active.count - 3].max %></div>
+            </div>
+            <span class="sg-sp-text"><%= performance.votes.count %> room members rated</span>
+          </div>
+
+          <%# CTA %>
+          <div class="sg-submit-wrap">
+            <button type="submit" class="sg-submit-btn">Send rating</button>
+          </div>
+
+          <%# Toast feedback %>
+          <div class="sg-toast" id="sg-toast" style="opacity:0">
+            Score registered! You're lighting up <%= singer&.nickname %>'s stage monitor.
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+  <% elsif performance&.revealed? %>
+    <%# ─── RESULT (Figma: Performance Result v2) ─── %>
+    <div class="sg-section sg-result-section">
+
+      <%# Result badge %>
+      <div class="sg-result-topbar">
+        <div class="sg-result-badge">✨ Result Revealed</div>
+        <div class="sg-live-sync">🎤 Live Stage Sync</div>
+      </div>
+
+      <%# Performer info %>
+      <div class="sg-result-performer-card">
+        <% singer = performance.singers.first %>
+        <div class="sg-rp-avatar"><%= singer&.emoji || "🎤" %></div>
+        <div class="sg-rp-info">
+          <div class="sg-rp-badge">PERFORMER</div>
+          <div class="sg-rp-name"><%= singer&.nickname || "Cantor" %></div>
+          <div class="sg-rp-song"><%= performance.song_request.title %> · <%= performance.song_request.artist %></div>
+        </div>
+      </div>
+
+      <%# Big score card %>
+      <div class="sg-score-card">
+        <div class="sg-score-glow-1"></div>
+        <div class="sg-score-glow-2"></div>
+        <div class="sg-crowd-score-label">🏆 CROWD SCORE</div>
+        <div class="sg-big-score"><%= performance.average_score || "—" %></div>
+        <div class="sg-score-sub">out of 10 · <%= performance.votes_count %> votes</div>
+        <div class="sg-score-stats">
+          <div class="sg-stat-pill"><span>💗</span><span class="sg-stat-val">100%</span><span class="sg-stat-name">Vibe</span></div>
+          <div class="sg-stat-pill"><span>⭐</span><span class="sg-stat-val"><%= performance.average_score || "—" %></span><span class="sg-stat-name">Score</span></div>
+          <div class="sg-stat-pill"><span>👑</span><span class="sg-stat-val">Legend</span><span class="sg-stat-name">Energy</span></div>
+        </div>
+      </div>
+
+      <%# Audience reaction — show a cheer message if any %>
+      <% cheer_vote = performance.votes.where.not(message: [nil, ""]).order(Arel.sql("RANDOM()")).first %>
+      <% if cheer_vote %>
+        <div class="sg-reaction-card">
+          <div class="sg-reaction-header">
+            <div class="sg-rc-left">💗 AUDIENCE REACTION</div>
+            <div class="sg-rc-anon">🔒 Anonymous</div>
+          </div>
+          <div class="sg-reaction-msg">"<%= cheer_vote.message %>"</div>
+          <div class="sg-reaction-footer">
+            <% room.participants.active.limit(3).each_with_index do |p, i| %>
+              <div class="sg-sp-av" style="background:<%= ['#5827A6','#C8F164','#FFD8E8'][i]%>"><%= p.emoji[0] rescue p.nickname[0] %></div>
+            <% end %>
+            <span class="sg-sp-text">Reacted with cheers &amp; claps</span>
+          </div>
+        </div>
+      <% end %>
+
+      <%# CTA buttons %>
+      <div class="sg-result-actions">
+        <%= link_to room_stage_path(room), class: "sg-btn-primary" do %>
+          🎤 Back to Stage
+        <% end %>
+        <%= link_to room_queue_path(room), class: "sg-btn-secondary" do %>
+          🎶 View Queue (<%= room.song_requests.queued.count %> songs)
+        <% end %>
+      </div>
+    </div>
+
+  <% else %>
+    <%# ─── IDLE / NO PERFORMANCE ─── %>
+    <div class="sg-section">
+      <div class="sg-idle-card">
+        <div class="sg-idle-icon">🎵</div>
+        <div class="sg-idle-title">Aguardando próxima música...</div>
+        <div class="sg-idle-sub">Peça uma música ou aguarde sua vez!</div>
+      </div>
+    </div>
+
+    <% if is_next %>
+      <div class="sg-section">
+        <div class="sg-next-card">
+          <span>⚡</span>
+          <div>
+            <div class="sg-next-title">You're Next!</div>
+            <div class="sg-next-sub">Get ready to take the stage</div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+
+  <%# ─── EMOJI FLOAT ZONE (TikTok-style) ─── %>
+  <div id="sg-emoji-float-zone"></div>
+
+  <%# ─── CROWD PRESENCE ─── %>
+  <div class="sg-crowd-row">
+    <% guests = room.participants.active.order(created_at: :desc).limit(3) %>
+    <div class="sg-crowd-avs">
+      <% guests.each_with_index do |p, i| %>
+        <div class="sg-crowd-av" style="background:<%= ['#2C2836','#5827A6','#C8F164'][i%3]%>; z-index:<%= 3-i%>"><%= p.emoji %></div>
+      <% end %>
+    </div>
+    <span class="sg-crowd-label"><strong><%= room.participants.active.count %></strong> <span style="color:#C4C9B2;font-weight:400"> guests listening</span></span>
+  </div>
+
+</div>
+
+<style>
+  .stage-content-wrap { padding: 16px; position: relative; overflow: hidden; }
+
+  /* Glow blobs */
+  .sg-glow { position: fixed; border-radius: 9999px; pointer-events: none; filter: blur(32px); z-index: 0; }
+  .sg-glow-1 { width: 320px; height: 320px; background: rgba(200,241,100,0.08); top: -64px; left: 35px; }
+  .sg-glow-2 { width: 256px; height: 256px; background: rgba(88,39,166,0.15); top: 200px; right: -20px; }
+
+  .sg-section { position: relative; z-index: 1; margin-bottom: 12px; }
+
+  /* Live ticker */
+  .sg-ticker { display: flex; justify-content: space-between; align-items: center; background: #1E1927; border-radius: 12px; padding: 8px 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+  .sg-ticker-left { display: flex; align-items: center; gap: 8px; }
+  .sg-live-dot-wrap { position: relative; width: 10px; height: 10px; flex-shrink: 0; }
+  .sg-dot-outer { position: absolute; inset: 0; background: #C8F164; border-radius: 9999px; opacity: 0.75; animation: sg-pulse 1.5s ease-in-out infinite; }
+  .sg-dot-inner { position: absolute; inset: 0; background: #C8F164; border-radius: 9999px; }
+  @keyframes sg-pulse { 0%,100%{transform:scale(1);opacity:.75} 50%{transform:scale(1.8);opacity:0} }
+  .sg-ticker-label { font-weight: 600; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: #C8F164; }
+  .sg-mic-pill { background: #2C2836; border-radius: 9999px; padding: 2px 8px; font-size: 12px; color: #C4C9B2; }
+
+  /* Performer card */
+  .sg-performer-card { background: #221D2B; border-radius: 16px; padding: 16px; position: relative; overflow: hidden; box-shadow: 0 8px 10px -6px rgba(0,0,0,.1),0 20px 25px -5px rgba(0,0,0,.1); }
+  .sg-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .sg-card-left { display: flex; align-items: center; gap: 6px; }
+  .sg-card-live { font-weight: 600; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: #C8F164; }
+  .sg-audio-pill { font-size: 11px; color: #FFAFD6; }
+  .sg-card-body { display: flex; align-items: center; gap: 16px; }
+  .sg-avatar-box { width: 64px; height: 64px; background: #373241; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 36px; flex-shrink: 0; }
+  .sg-card-info { flex: 1; }
+  .sg-singer-name { font-family: 'Space Grotesk',sans-serif; font-weight: 600; font-size: 20px; color: #E8DFF2; }
+  .sg-singer-role { font-size: 14px; color: #C4C9B2; font-family: 'Inter',sans-serif; font-weight: 400; }
+  .sg-song-title { font-family: 'Space Grotesk',sans-serif; font-weight: 600; font-size: 18px; color: #D4BBFF; margin-top: 2px; }
+  .sg-song-artist { font-size: 13px; color: #C4C9B2; margin-top: 2px; }
+  .sg-soundwave { display: flex; align-items: flex-end; gap: 3px; height: 16px; margin-top: 12px; }
+  .sg-bar { width: 4px; background: #C8F164; border-radius: 9999px; animation: sg-eq 0.8s ease-in-out infinite alternate; }
+  .sg-bar:nth-child(1){height:6px} .sg-bar:nth-child(2){height:14px} .sg-bar:nth-child(3){height:8px} .sg-bar:nth-child(4){height:16px} .sg-bar:nth-child(5){height:10px} .sg-bar:nth-child(6){height:14px} .sg-bar:nth-child(7){height:6px}
+  @keyframes sg-eq { from{transform:scaleY(.4)} to{transform:scaleY(1)} }
+
+  .sg-closing-card { display:flex;align-items:center;justify-content:center;gap:10px;background:#1E1927;border-radius:16px;padding:20px; }
+  .sg-closing-text { font-weight:600;font-size:16px;color:#f59e0b; }
+  .sg-singing-card, .sg-voted-card { display:flex;flex-direction:column;align-items:center;gap:10px;background:#1E1927;border-radius:16px;padding:24px;text-align:center; }
+  .sg-singing-title { font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;color:#C8F164; }
+  .sg-singing-sub { color:#C4C9B2;font-size:14px; }
+  .sg-voted-card { flex-direction:row;padding:16px;font-size:15px;color:#C4C9B2; }
+
+  /* Vote form */
+  .sg-vote-header { padding: 8px 4px 0; }
+  .sg-vote-title { font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;letter-spacing:-0.025em;color:#E8DFF2; }
+  .sg-vote-sub { font-size:16px;color:#C4C9B2;margin-top:4px; }
+  .sg-keypad { display:flex;flex-direction:column;gap:8px;margin-bottom:8px; }
+  .sg-keypad-row { display:flex;gap:8px; }
+  .sg-key-label { flex:1;cursor:pointer; }
+  .sg-key { display:block;height:56px;background:#2C2836;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:20px;color:#E8DFF2;transition:background .12s,transform .08s;box-shadow:0 1px 2px rgba(0,0,0,.05);user-select:none; }
+  .sg-key.selected { background:#C8F164;color:#151F00;box-shadow:0 0 0 4px #C8F164,0 0 0 6px #15111E; }
+  .sg-key:active { transform:scale(.94); }
+  .sg-key-10 { font-size:18px; }
+  .sg-vibe-row { display:flex;align-items:center;gap:8px;padding:8px;background:#1E1927;border-radius:12px;margin-bottom:12px; }
+  .sg-vibe-icon { font-size:16px; }
+  .sg-vibe-text { flex:1;font-weight:600;font-size:14px;color:#C8F164; }
+  .sg-vibe-tally { font-size:12px;color:#C4C9B2; }
+  .sg-section-label { font-weight:600;font-size:11px;letter-spacing:0.05em;text-transform:uppercase;color:#C4C9B2;margin-bottom:6px;display:block; }
+  .sg-pills-scroll { display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none; }
+  .sg-pills-scroll::-webkit-scrollbar { display:none; }
+  .sg-pill { flex-shrink:0;background:#221D2B;border:none;border-radius:12px;padding:10px 14px;font-family:'Inter',sans-serif;font-weight:600;font-size:13px;color:#E8DFF2;cursor:pointer;white-space:nowrap;transition:background .12s; }
+  .sg-pill:active { background:#2C2836; }
+  .sg-cheer-wrap { margin-bottom:12px; }
+  .sg-cheer-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:6px; }
+  .sg-cheer-count { font-size:12px;color:#C4C9B2; }
+  .sg-cheer-input-row { display:flex;align-items:flex-start;gap:8px;background:#2C2836;border-radius:12px;padding:4px 4px 4px 16px;box-shadow:inset 0 2px 4px rgba(0,0,0,.05); }
+  .sg-cheer-icon { font-size:18px;margin-top:12px; }
+  .sg-cheer-input { flex:1;background:none;border:none;outline:none;resize:none;font-family:'Inter',sans-serif;font-size:15px;color:#E8DFF2;padding:12px 12px 12px 0;line-height:1.4; }
+  .sg-cheer-input::placeholder { color:rgba(196,201,178,.6); }
+  .sg-social-proof { display:flex;align-items:center;gap:10px;background:#1E1927;border-radius:12px;padding:12px;margin-bottom:12px; }
+  .sg-sp-avatars { display:flex; }
+  .sg-sp-av { width:20px;height:20px;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-size:11px;margin-left:-5px;box-shadow:0 0 0 2px #15111E; }
+  .sg-sp-av:first-child { margin-left:0; }
+  .sg-sp-more { background:#3C3746;color:#E8DFF2;font-size:9px;font-weight:600; }
+  .sg-sp-text { font-size:13px;color:#C4C9B2; }
+  .sg-submit-wrap { margin-bottom:8px; }
+  .sg-submit-btn { width:100%;height:56px;background:#C8F164;border:none;border-radius:12px;font-family:'Inter',sans-serif;font-weight:600;font-size:17px;letter-spacing:0.01em;color:#151F00;cursor:pointer;box-shadow:0 4px 6px -4px rgba(0,0,0,.1),0 10px 15px -3px rgba(0,0,0,.1);transition:transform .1s; }
+  .sg-submit-btn:active { transform:scale(.97); }
+  .sg-toast { background:#373241;border-radius:8px;padding:12px;text-align:center;font-size:12px;font-weight:600;letter-spacing:.04em;color:#C8F164;transition:opacity .4s;margin-top:8px; }
+
+  /* Result screen */
+  .sg-result-section { padding: 8px 0; }
+  .sg-result-topbar { display:flex;justify-content:space-between;align-items:center;margin-bottom:12px; }
+  .sg-result-badge { background:#2C2836;border-radius:9999px;padding:4px 12px;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#C8F164;display:flex;align-items:center;gap:6px; }
+  .sg-live-sync { font-size:12px;color:#C4C9B2; }
+  .sg-result-performer-card { background:#2C2836;border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;margin-bottom:12px;box-shadow:0 8px 10px -6px rgba(0,0,0,.1),0 20px 25px -5px rgba(0,0,0,.1); }
+  .sg-rp-avatar { width:56px;height:56px;background:#373241;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0; }
+  .sg-rp-badge { font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#D4BBFF; }
+  .sg-rp-name { font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:20px;color:#E8DFF2;margin-top:2px; }
+  .sg-rp-song { font-size:13px;color:#C4C9B2;margin-top:2px; }
+  .sg-score-card { background:#2C2836;border-radius:16px;padding:24px;text-align:center;position:relative;overflow:hidden;margin-bottom:12px;box-shadow:0 8px 10px -6px rgba(0,0,0,.1),0 20px 25px -5px rgba(0,0,0,.1); }
+  .sg-score-glow-1 { position:absolute;width:144px;height:144px;background:rgba(88,39,166,.3);border-radius:9999px;filter:blur(20px);top:-40px;right:-20px;pointer-events:none; }
+  .sg-score-glow-2 { position:absolute;width:144px;height:144px;background:rgba(200,241,100,.15);border-radius:9999px;filter:blur(20px);bottom:-20px;left:-20px;pointer-events:none; }
+  .sg-crowd-score-label { font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#D4BBFF;margin-bottom:12px; }
+  .sg-big-score { font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:76px;line-height:1;letter-spacing:-0.025em;color:#C8F164;text-shadow:0 4px 3px rgba(0,0,0,.07),0 2px 2px rgba(0,0,0,.06); }
+  .sg-score-sub { font-size:16px;color:#C4C9B2;margin-top:8px; }
+  .sg-score-stats { display:flex;justify-content:center;gap:8px;margin-top:16px; }
+  .sg-stat-pill { background:#221D2B;border-radius:12px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;flex:1; }
+  .sg-stat-val { font-weight:700;font-size:12px;color:#E8DFF2; }
+  .sg-stat-name { font-size:10px;color:#C4C9B2; }
+  .sg-reaction-card { background:#2C2836;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 4px -2px rgba(0,0,0,.1),0 4px 6px -1px rgba(0,0,0,.1); }
+  .sg-reaction-header { display:flex;justify-content:space-between;margin-bottom:8px; }
+  .sg-rc-left { font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#C4C9B2; }
+  .sg-rc-anon { font-size:11px;color:#C4C9B2; }
+  .sg-reaction-msg { font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:18px;color:#E8DFF2;margin-bottom:10px; }
+  .sg-reaction-footer { display:flex;align-items:center;gap:8px; }
+  .sg-result-actions { display:flex;flex-direction:column;gap:8px;margin-top:8px; }
+  .sg-btn-primary { display:flex;align-items:center;justify-content:center;gap:8px;height:56px;background:#C8F164;border-radius:12px;font-weight:600;font-size:17px;color:#151F00;text-decoration:none;box-shadow:0 4px 6px -4px rgba(0,0,0,.1),0 10px 15px -3px rgba(0,0,0,.1); }
+  .sg-btn-secondary { display:flex;align-items:center;justify-content:center;gap:8px;height:56px;background:#2C2836;border-radius:12px;font-weight:600;font-size:17px;color:#E8DFF2;text-decoration:none; }
+
+  /* Idle */
+  .sg-idle-card { display:flex;flex-direction:column;align-items:center;gap:12px;background:#1E1927;border-radius:16px;padding:40px 24px;text-align:center; }
+  .sg-idle-icon { font-size:56px;animation:sg-idle-pulse 2s ease-in-out infinite; }
+  @keyframes sg-idle-pulse { 0%,100%{transform:scale(1);opacity:.5} 50%{transform:scale(1.1);opacity:1} }
+  .sg-idle-title { font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:#E8DFF2; }
+  .sg-idle-sub { font-size:14px;color:#8E937E; }
+  .sg-next-card { display:flex;align-items:center;gap:12px;background:#1E1927;border:2px solid rgba(200,241,100,.4);border-radius:16px;padding:16px; }
+  .sg-next-title { font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;color:#C8F164; }
+  .sg-next-sub { font-size:13px;color:#C4C9B2; }
+
+  /* ── TikTok Emoji Float Zone ── */
+  #sg-emoji-float-zone {
+    position: fixed;
+    bottom: 100px; left: 0; right: 0;
+    height: 70vh;
+    pointer-events: none;
+    z-index: 500;
+    overflow: hidden;
+  }
+  .ef-emoji {
+    position: absolute;
+    bottom: 0;
+    transform: translateX(-50%);
+    line-height: 1;
+    animation: ef-rise var(--dur, 2s) ease-out forwards;
+    user-select: none;
+  }
+  @keyframes ef-rise {
+    0%   { transform: translateX(-50%) translateY(0)     rotate(var(--rot,0deg)) scale(.4); opacity:0; }
+    8%   { transform: translateX(-50%) translateY(-20px)  rotate(var(--rot,0deg)) scale(1.15); opacity:1; }
+    40%  { transform: translateX(calc(-50% + var(--sway,0px) * .3)) translateY(-120px) rotate(calc(var(--rot,0deg) * .5)) scale(1); opacity:1; }
+    80%  { opacity:.7; }
+    100% { transform: translateX(calc(-50% + var(--sway,0px))) translateY(-320px) rotate(0deg) scale(.7); opacity:0; }
+  }
+  .sg-crowd-avs { display:flex; }
+  .sg-crowd-av { width:24px;height:24px;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-size:13px;margin-left:-6px;box-shadow:0 0 0 2px #15111E; }
+  .sg-crowd-av:first-child { margin-left:0; }
+  .sg-crowd-label { font-size:14px;font-weight:600;color:#E8DFF2; }
+
+  /* ── Reactions Bar ── */
+  .sg-reactions-bar { background:#1E1927;border-radius:16px;padding:14px 16px; }
+  .sg-reactions-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:12px; }
+  .sg-reactions-left { display:flex;align-items:center;gap:6px; }
+  .sg-reactions-total { font-size:12px;color:#C4C9B2; }
+  .sg-reactions-grid { display:flex;gap:8px; }
+  .sg-reaction-btn {
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:4px;padding:10px 4px;
+    background:#2C2836;border:none;border-radius:12px;
+    cursor:pointer;
+    box-shadow:0 1px 2px rgba(0,0,0,.05);
+    transition:transform .08s,background .12s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .sg-reaction-btn:active { transform:scale(.88); }
+  .sg-reaction-btn.tapped { background:#373241; }
+  .sg-reaction-emoji { font-size:26px;line-height:1; }
+  .sg-reaction-count { font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12px;color:#C4C9B2; }
+</style>
+
+<script>
+  const vibeLabels = {
+    0:'Ouch... honest though!', 1:'Room for improvement.', 2:'Keep practicing!',
+    3:'Almost there...', 4:'Not bad!', 5:'Decent effort!',
+    6:'Pretty good!', 7:'Nice performance!', 8:'Great stuff!',
+    9:'Fantastic!', 10:'Perfection! Crowd is rocking!'
+  };
+  function pickScore(el, score) {
+    document.querySelectorAll('.sg-key').forEach(k => k.classList.remove('selected'));
+    el.classList.add('selected');
+    const vt = document.getElementById('sg-vibe-text');
+    if (vt) vt.textContent = vibeLabels[score];
+  }
+  function setMsg(text) {
+    const ta = document.getElementById('cheer-msg');
+    if (ta) { ta.value = text; document.getElementById('cheer-count').textContent = text.length + '/140'; }
+  }
+  // Show toast on submit
+  const vf = document.getElementById('vote-form');
+  if (vf) {
+    vf.addEventListener('submit', function() {
+      const toast = document.getElementById('sg-toast');
+      if (toast) { toast.style.opacity = '1'; setTimeout(()=>{ toast.style.opacity='0'; }, 3000); }
+    });
+  }
+
+  // ── Reactions: POST ao servidor + feedback visual imediato ──
+  const _reactionRoom = document.querySelector('[data-room-code]')?.dataset.roomCode;
+
+  const REACTION_EMOJIS = { fire:'🔥', clap:'👏', crown:'👑', heart:'💖', disco:'🪩' };
+
+  // ── TikTok-style emoji float ──
+  function floatEmoji(kind, zoneId) {
+    const zone = document.getElementById(zoneId || 'sg-emoji-float-zone');
+    if (!zone) return;
+    const emoji = REACTION_EMOJIS[kind] || kind;
+    // Spawna 1-3 emojis com delay ligeiro entre eles
+    const count = Math.floor(Math.random() * 2) + 1;
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => spawnEmojiFloat(emoji, zone), i * 120);
+    }
+  }
+
+  function spawnEmojiFloat(emoji, zone) {
+    const el = document.createElement('span');
+    el.className = 'ef-emoji';
+    el.textContent = emoji;
+    // tamanho aleatório entre 22px e 52px
+    const size   = 22 + Math.random() * 30;
+    // X aleatório dentro da zona
+    const xPct   = 20 + Math.random() * 60;
+    // duração entre 1.4s e 2.6s (mais rápido que mensagens)
+    const dur    = 1.4 + Math.random() * 1.2;
+    // sway horizontal
+    const sway   = (Math.random() - 0.5) * 40;
+    // rotação inicial
+    const rot    = (Math.random() - 0.5) * 20;
+
+    el.style.cssText = [
+      `font-size:${size}px`,
+      `left:${xPct}%`,
+      `--sway:${sway}px`,
+      `--rot:${rot}deg`,
+      `animation-duration:${dur}s`,
+    ].join(';');
+
+    zone.appendChild(el);
+    setTimeout(() => el.remove(), dur * 1000 + 100);
+  }
+
+  function sendReaction(kind, btn) {
+    if (!_reactionRoom) return;
+    // Feedback visual imediato — float local
+    floatEmoji(kind, 'sg-emoji-float-zone');
+    btn.classList.add('tapped');
+    setTimeout(() => btn.classList.remove('tapped'), 200);
+    // POST ao servidor (fire-and-forget)
+    fetch('/rooms/' + _reactionRoom + '/reactions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'kind=' + encodeURIComponent(kind)
+    }).catch(() => {});
+  }
+</script>

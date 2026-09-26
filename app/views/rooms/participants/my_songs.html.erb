@@ -1,0 +1,469 @@
+<div class="ms-page">
+
+  <%= render "rooms/participants/page_header", title: "My Songs", icon: :songs %>
+
+  <main class="ms-main">
+
+    <%# ── TOP HERO HEADER ── %>
+    <div class="ms-hero">
+      <div class="ms-hero-top">
+        <h1 class="ms-hero-title">My Songs</h1>
+        <div class="ms-live-pill">
+          <span class="ms-live-dot"></span>
+          <span class="ms-live-text">Live Room</span>
+        </div>
+      </div>
+      <p class="ms-hero-sub">Your pending requests in the room</p>
+    </div>
+
+    <% pending_count = @my_songs.count { |s| s.queued? || s.performing? }
+       limit_reached = pending_count >= 2 %>
+
+    <%# ── QUEUE LIMIT BANNER ── %>
+    <% if limit_reached %>
+      <div class="ms-limit-banner">
+        <div class="ms-limit-top">
+          <div class="ms-limit-left">
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+              <path d="M1 11L5.5 2L8 7L10.5 4.5L15 11H1Z" stroke="#C8F164" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+            <span class="ms-limit-title">Queue Limit</span>
+          </div>
+          <span class="ms-limit-badge"><%= pending_count %> of 2 requests</span>
+        </div>
+        <div class="ms-limit-slots">
+          <div class="ms-limit-slot ms-limit-slot--full"></div>
+          <div class="ms-limit-slot ms-limit-slot--full"></div>
+        </div>
+        <p class="ms-limit-msg">You've reached the maximum of 2 pending requests. Wait for your turn or cancel a request to add another.</p>
+      </div>
+    <% end %>
+
+    <%# ── REQUEST ITEMS ── %>
+    <% active_songs = @my_songs.select { |s| s.queued? || s.performing? }
+       done_songs   = @my_songs.select { |s| s.completed? || s.cancelled? } %>
+
+    <% active_songs.each_with_index do |sr, i| %>
+      <div class="ms-song-card">
+        <%# Art thumbnail %>
+        <div class="ms-song-art">
+          <div class="ms-song-art-bg" style="background: <%= ['linear-gradient(135deg,#5827A6,#2C2836)', 'linear-gradient(135deg,#373241,#1E1927)'][i % 2] %>;">
+            <span style="font-size: 28px;"><%= sr.participant.emoji %></span>
+          </div>
+          <div class="ms-song-art-overlay"></div>
+          <div class="ms-song-art-icon">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M6 13V4.5L14 3V11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="4" cy="13" r="2" fill="currentColor"/>
+              <circle cx="12" cy="11.5" r="2" fill="currentColor"/>
+            </svg>
+          </div>
+        </div>
+
+        <%# Info %>
+        <div class="ms-song-info">
+          <% if sr.performing? %>
+            <span class="ms-song-badge ms-song-badge--performing">🎤 Performing now</span>
+          <% else %>
+            <% queue_pos = @my_songs.select(&:queued?).index(sr) %>
+            <span class="ms-song-badge ms-song-badge--queued">#<%= (queue_pos || 0) + 1 %> in queue</span>
+          <% end %>
+          <div class="ms-song-title"><%= sr.title %></div>
+          <div class="ms-song-artist"><%= sr.artist %></div>
+        </div>
+
+        <%# Actions %>
+        <% if sr.queued? %>
+          <form action="/rooms/<%= current_room.code %>/song_requests/<%= sr.id %>/cancel" method="post" data-turbo="false">
+            <input type="hidden" name="_method" value="patch">
+            <button type="submit" class="ms-cancel-btn" onclick="return confirm('Cancelar este pedido?')" title="Cancelar">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1.5 1.5L10.5 10.5M10.5 1.5L1.5 10.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </form>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# ── ADD SONG CTA ── %>
+    <% if limit_reached %>
+      <div class="ms-locked-cta">
+        <button class="ms-add-btn ms-add-btn--locked" disabled>
+          <svg width="14" height="18" viewBox="0 0 14 19" fill="none">
+            <rect x="3" y="0.5" width="8" height="11" rx="4" fill="currentColor"/>
+            <path d="M1 9.5C1 12.8 3.69 15.5 7 15.5C10.31 15.5 13 12.8 13 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          Request another song
+        </button>
+        <div class="ms-locked-hint">
+          <svg width="11" height="13" viewBox="0 0 11 13" fill="none">
+            <rect x="1" y="5" width="9" height="7" rx="2" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M3.5 5V3.5C3.5 2.12 4.34 1 5.5 1C6.66 1 7.5 2.12 7.5 3.5V5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          <span>Slot unlocks once your turn finishes or a request is cancelled</span>
+        </div>
+      </div>
+    <% else %>
+      <%# ── REQUEST FORM ── %>
+      <div class="ms-form-card" id="ms-form-wrap">
+        <div class="ms-form-header">
+          <span class="ms-form-title">Request a song</span>
+          <span class="ms-form-slots"><%= 2 - pending_count %> slot<%= (2 - pending_count) == 1 ? '' : 's' %> available</span>
+        </div>
+        <form action="/rooms/<%= current_room.code %>/song_requests" method="post" data-turbo="false">
+          <div class="ms-field">
+            <label class="ms-field-label">Song title</label>
+            <input class="ms-input" type="text" name="song_request[title]" placeholder="Ex: Bohemian Rhapsody" maxlength="120" required>
+          </div>
+          <div class="ms-field">
+            <label class="ms-field-label">Artist</label>
+            <input class="ms-input" type="text" name="song_request[artist]" placeholder="Ex: Queen" maxlength="120" required>
+          </div>
+          <button type="submit" class="ms-add-btn ms-add-btn--active">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <line x1="6.5" y1="1" x2="6.5" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <line x1="1" y1="6.5" x2="12" y2="6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Request song
+          </button>
+        </form>
+      </div>
+    <% end %>
+
+    <%# ── TAKE A BREAK TOGGLE ── %>
+    <div class="ms-break-card">
+      <div class="ms-break-icon-box">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="3" y="2" width="4" height="14" rx="2" fill="currentColor"/>
+          <rect x="11" y="2" width="4" height="14" rx="2" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="ms-break-text">
+        <div class="ms-break-title">Take a break</div>
+        <div class="ms-break-sub">Preserves your requests &amp; passes turn</div>
+      </div>
+      <form action="/rooms/<%= current_room.code %>/toggle_availability" method="post" data-turbo="false" style="flex-shrink:0">
+        <input type="hidden" name="_method" value="patch">
+        <button type="submit" class="ms-toggle <%= current_participant.available? ? 'ms-toggle--off' : 'ms-toggle--on' %>" title="<%= current_participant.available? ? 'Passar minha vez' : 'Voltar para a fila' %>">
+          <span class="ms-toggle-knob"></span>
+        </button>
+      </form>
+    </div>
+
+    <%# ── PAST PERFORMANCES ── %>
+    <% if done_songs.any? %>
+      <div class="ms-past-label">HISTÓRICO</div>
+      <div class="ms-past-list">
+        <% done_songs.first(5).each do |sr| %>
+          <div class="ms-past-row">
+            <div class="ms-past-info">
+              <span class="ms-past-title"><%= sr.title %></span>
+              <span class="ms-past-artist"><%= sr.artist %></span>
+            </div>
+            <span class="ms-past-status <%= sr.completed? ? 'ms-past-status--done' : 'ms-past-status--cancelled' %>">
+              <%= sr.completed? ? '✅' : '✕' %>
+            </span>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# ── STAGE TIP ── %>
+    <% if pending_count > 0 %>
+      <div class="ms-tip">
+        <div class="ms-tip-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1L9.8 6H15L10.6 9.2L12.4 14L8 10.8L3.6 14L5.4 9.2L1 6H6.2L8 1Z" fill="#C8F164"/>
+          </svg>
+        </div>
+        <div class="ms-tip-text">
+          <span class="ms-tip-label">Stage tip</span>
+          <span class="ms-tip-body">Grab your drink now! Your turn is coming up.</span>
+        </div>
+      </div>
+    <% end %>
+
+  </main>
+
+  <%= render "rooms/participants/bottom_nav", active: "my_songs" %>
+
+</div>
+
+<style>
+  body { background: #15111E; }
+
+  .ms-page {
+    min-height: 100dvh;
+    background: #15111E;
+    font-family: 'Inter', -apple-system, sans-serif;
+  }
+
+  .ms-main {
+    padding-top: 80px;
+    padding-bottom: 100px;
+    padding-left: 16px;
+    padding-right: 16px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* ── HERO ── */
+  .ms-hero { margin-bottom: 16px; }
+  .ms-hero-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .ms-hero-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: -0.025em;
+    color: #E8DFF2;
+    margin: 0;
+  }
+  .ms-live-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #2C2836;
+    border-radius: 9999px;
+    padding: 4px 10px 4px 8px;
+  }
+  .ms-live-dot {
+    width: 6px; height: 6px;
+    background: #C8F164;
+    border-radius: 9999px;
+    box-shadow: 0 0 6px rgba(200,241,100,.8);
+    animation: ms-pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes ms-pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .ms-live-text { font-size: 12px; font-weight: 600; color: #D4BBFF; letter-spacing: 0.02em; }
+  .ms-hero-sub { font-size: 14px; color: #C4C9B2; margin: 0; }
+
+  /* ── LIMIT BANNER ── */
+  .ms-limit-banner {
+    background: #2C2836;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 4px -2px rgba(0,0,0,.1), 0 4px 6px -1px rgba(0,0,0,.1);
+  }
+  .ms-limit-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .ms-limit-left { display: flex; align-items: center; gap: 8px; }
+  .ms-limit-title { font-weight: 600; font-size: 15px; color: #E8DFF2; }
+  .ms-limit-badge {
+    background: #100C19;
+    color: #C8F164;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 3px 10px;
+  }
+  .ms-limit-slots { display: flex; gap: 6px; margin-bottom: 10px; }
+  .ms-limit-slot {
+    flex: 1; height: 4px; border-radius: 9999px; background: #1E1927;
+  }
+  .ms-limit-slot--full { background: #C8F164; }
+  .ms-limit-msg { font-size: 13px; color: #C4C9B2; line-height: 1.5; margin: 0; }
+
+  /* ── SONG CARDS ── */
+  .ms-song-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #221D2B;
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 6px -4px rgba(0,0,0,.1), 0 10px 15px -3px rgba(0,0,0,.1);
+  }
+  .ms-song-art {
+    width: 64px; height: 64px;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px -2px rgba(0,0,0,.1), 0 4px 6px -1px rgba(0,0,0,.1);
+  }
+  .ms-song-art-bg {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ms-song-art-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, transparent 40%, rgba(16,12,25,.7) 100%);
+  }
+  .ms-song-art-icon {
+    position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
+    color: #C8F164;
+    display: flex; align-items: center;
+  }
+
+  .ms-song-info { flex: 1; min-width: 0; }
+  .ms-song-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    border-radius: 6px;
+    padding: 2px 8px;
+    margin-bottom: 4px;
+  }
+  .ms-song-badge--queued   { background: #100C19; color: #C8F164; }
+  .ms-song-badge--performing { background: rgba(255,175,214,.1); color: #FFAFD6; }
+  .ms-song-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 16px;
+    color: #E8DFF2;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ms-song-artist { font-size: 13px; color: #C4C9B2; margin-top: 1px; }
+
+  .ms-cancel-btn {
+    width: 36px; height: 36px;
+    padding: 0;
+    background: rgba(255,100,100,.15);
+    border: 1.5px solid rgba(255,100,100,.35) !important;
+    border-radius: 10px;
+    color: rgba(255,120,120,1);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background .1s;
+  }
+  .ms-cancel-btn:hover { background: rgba(255,100,100,.25); }
+  .ms-cancel-btn svg { pointer-events: none; display: block; }
+  .ms-cancel-btn svg path { stroke: rgba(255,120,120,1) !important; }
+
+  /* ── ADD / LOCKED CTA ── */
+  .ms-add-btn {
+    width: 100%; height: 52px;
+    border: none; border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    cursor: pointer;
+    transition: transform .1s;
+    margin-bottom: 8px;
+  }
+  .ms-add-btn:active { transform: scale(.97); }
+  .ms-add-btn--active { background: #C8F164; color: #151F00; }
+  .ms-add-btn--locked { background: #2C2836; color: #C4C9B2; opacity: .6; cursor: not-allowed; }
+
+  .ms-locked-cta { margin-bottom: 12px; }
+  .ms-locked-hint {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: 13px; color: #C4C9B2; line-height: 1.5;
+    padding: 0 4px;
+  }
+  .ms-locked-hint svg { flex-shrink: 0; margin-top: 2px; color: #C4C9B2; }
+
+  /* ── REQUEST FORM ── */
+  .ms-form-card {
+    background: #221D2B;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 6px -4px rgba(0,0,0,.1), 0 10px 15px -3px rgba(0,0,0,.1);
+  }
+  .ms-form-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .ms-form-title { font-weight: 700; font-size: 16px; color: #E8DFF2; }
+  .ms-form-slots {
+    font-size: 12px; font-weight: 600;
+    color: #C8F164; background: rgba(200,241,100,.1);
+    border-radius: 6px; padding: 3px 8px;
+  }
+  .ms-field { margin-bottom: 10px; }
+  .ms-field-label {
+    display: block; font-size: 11px; font-weight: 600;
+    letter-spacing: .06em; text-transform: uppercase;
+    color: #C4C9B2; margin-bottom: 6px;
+  }
+  .ms-input {
+    width: 100%; background: #2C2836;
+    border: none; border-radius: 12px;
+    padding: 13px 16px;
+    font-family: 'Inter', sans-serif; font-size: 15px; color: #E8DFF2;
+    outline: none; box-sizing: border-box;
+    transition: box-shadow .15s;
+  }
+  .ms-input::placeholder { color: rgba(196,201,178,.5); }
+  .ms-input:focus { box-shadow: 0 0 0 2px #C8F164; }
+
+  /* ── TAKE A BREAK ── */
+  .ms-break-card {
+    display: flex; align-items: center; gap: 12px;
+    background: #221D2B;
+    border-radius: 12px; padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 4px -2px rgba(0,0,0,.1), 0 4px 6px -1px rgba(0,0,0,.1);
+  }
+  .ms-break-icon-box {
+    width: 40px; height: 40px;
+    background: #2C2836; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: #D4BBFF; flex-shrink: 0;
+  }
+  .ms-break-text { flex: 1; }
+  .ms-break-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 15px; color: #E8DFF2;
+  }
+  .ms-break-sub { font-size: 13px; color: #C4C9B2; margin-top: 2px; }
+
+  .ms-toggle {
+    width: 52px; height: 30px;
+    border: none; border-radius: 9999px;
+    cursor: pointer; padding: 3px;
+    display: flex; align-items: center;
+    transition: background .2s;
+    position: relative;
+  }
+  .ms-toggle--off { background: #373241; justify-content: flex-start; }
+  .ms-toggle--on  { background: #C8F164; justify-content: flex-end; }
+  .ms-toggle-knob {
+    width: 24px; height: 24px;
+    background: #fff; border-radius: 9999px;
+    box-shadow: 0 2px 4px -2px rgba(0,0,0,.1), 0 4px 6px -1px rgba(0,0,0,.1);
+    display: block;
+  }
+  .ms-toggle--on .ms-toggle-knob { background: #151F00; }
+
+  /* ── HISTÓRICO ── */
+  .ms-past-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .1em;
+    text-transform: uppercase; color: #C4C9B2;
+    margin-bottom: 8px; margin-top: 4px;
+  }
+  .ms-past-list {
+    background: #1E1927; border-radius: 12px; overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .ms-past-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+  .ms-past-row:last-child { border-bottom: none; }
+  .ms-past-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .ms-past-title { font-weight: 600; font-size: 14px; color: #E8DFF2; }
+  .ms-past-artist { font-size: 12px; color: #C4C9B2; }
+  .ms-past-status { font-size: 14px; flex-shrink: 0; margin-left: 8px; }
+  .ms-past-status--cancelled { color: #8E937E; font-size: 12px; }
+
+  /* ── STAGE TIP ── */
+  .ms-tip {
+    display: flex; align-items: center; gap: 12px;
+    background: #1E1927; border-radius: 12px; padding: 14px 16px;
+  }
+  .ms-tip-icon {
+    width: 36px; height: 36px;
+    background: #221D2B; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .ms-tip-text { display: flex; flex-direction: column; gap: 2px; }
+  .ms-tip-label { font-size: 11px; font-weight: 600; color: #C8F164; letter-spacing: .05em; text-transform: uppercase; }
+  .ms-tip-body  { font-size: 13px; color: #C4C9B2; line-height: 1.4; }
+</style>

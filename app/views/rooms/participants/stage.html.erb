@@ -1,0 +1,30 @@
+<div class="stage-page" data-room-code="<%= current_room.code %>">
+
+  <%# ── HEADER ── %>
+  <%= render "rooms/participants/page_header", title: "Stage", icon: :mic %>
+
+  <%# ── MAIN CONTENT — swapped via ActionCable ── %>
+  <main class="stage-main" id="stage-content">
+    <%= render "stage_state", room: current_room, performance: @performance, is_singer: @is_singer, is_next: @is_next %>
+  </main>
+
+  <%= render "rooms/participants/bottom_nav", active: "stage" %>
+
+</div>
+
+<style>
+  body { background: #15111E; }
+
+  .stage-page {
+    min-height: 100dvh;
+    background: #15111E;
+    font-family: 'Inter', -apple-system, sans-serif;
+  }
+
+  .stage-main {
+    padding-top: 64px;
+    padding-bottom: 80px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+</style>

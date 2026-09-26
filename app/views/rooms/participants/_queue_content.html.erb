@@ -1,0 +1,14 @@
+<div id="queue-content">
+  <% queue = QueueOrder.new(room).call %>
+  <% queue.each_with_index do |sr, i| %>
+    <div style="display: flex; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--color-surface-2);">
+      <span style="width: 24px; color: var(--color-text-muted); font-size: 0.85rem;"><%= i + 1 %>.</span>
+      <span style="font-size: 1.2rem; margin-right: 0.5rem;"><%= sr.participant.emoji %></span>
+      <span><%= sr.participant.nickname %></span>
+      <span class="text-muted" style="margin-left: auto; font-size: 0.85rem;"><%= sr.title %></span>
+    </div>
+  <% end %>
+  <% if queue.empty? %>
+    <p class="text-muted text-center">Fila vazia</p>
+  <% end %>
+</div>
